@@ -1,149 +1,153 @@
 <?php
-    class newsletterPlugin extends Plugin {
+class newsletterPlugin extends Plugin
+{
 
 
-        public function init()
-        {
-            $this->dbFields = array(
-                'sender'=>'',
-                'sendername'=>'',
-                'passwordsmtp'=>'',
-                'smtpserver'=>'',
-                'port'=>'',
-                'auth'=>'',
-                'ssl'=>'',
+    public function init()
+    {
+        $this->dbFields = array(
+            'sender' => '',
+            'sendername' => '',
+            'passwordsmtp' => '',
+            'smtpserver' => '',
+            'port' => '',
+            'auth' => '',
+            'ssl' => '',
+            'mailoption' => '',
 
 
-                'subscribebtn'=>'Subscribe to our Newsletter',
-                'successmsg' =>'You have been successfully subscribed!',
-                'errormsg'=>'Ouch, something went wrong.'
-            );
+            'subscribebtn' => 'Subscribe to our Newsletter',
+            'successmsg' => 'You have been successfully subscribed!',
+            'errormsg' => 'Ouch, something went wrong.'
+        );
 
-            $this->customHooks = array(
-                'newsletter'
-            );
-        }
-    
-        public function form() {
-     
-        include($this->phpPath().'php/form.php');
-        }
+        $this->customHooks = array(
+            'newsletter'
+        );
+    }
 
+    public function form()
+    {
 
- public function post(){
-
-            if(isset($_POST['maillist'])){
-                file_put_contents($this->phpPath().'security/emails',$_POST['maillist']);
-            };
-
-            if(isset($_POST['messagenewsletter'])){
-                file_put_contents($this->phpPath().'security/info',$_POST['messagenewsletter']);
-            };
-        
-            parent::post();
-
-        }
-
+        include($this->phpPath() . 'php/form.php');
 
         
-
-        
-
-
-        public function adminController()
-        {
-            // Check if the form was sent
-            if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-               
-                
-                $emailList = file_get_contents($this->phpPath().'security/emails');
-                $newlist = explode(",",$emailList);
+    }
 
 
-if(isset($_POST['sendnewsletter'])){
+    public function post()
+    {
 
-    require($this->phpPath()."PHPMailer/src/PHPMailer.php");
-    require($this->phpPath()."PHPMailer/src/SMTP.php");
-    require($this->phpPath()."PHPMailer/src/Exception.php");
-    
-    $subject = $_POST['titlens'];
-    $message = $_POST['contentnewsletter'];
-    
-    $mail = new PHPMailer\PHPMailer\PHPMailer();
-    
-    $mail->IsSMTP();
-    $mail->CharSet="UTF-8";
-    $mail->Host = $this->getValue('smtpserver'); /* Zależne od hostingu poczty*/
-    $mail->SMTPDebug = 0;
-    $mail->Port = $this->getValue('port'); /* Zależne od hostingu poczty, czasem 587 */
+        if (isset($_POST['maillist'])) {
+            file_put_contents($this->phpPath() . 'security/emails', $_POST['maillist']);
+        };
 
-    if($this->getValue('ssl') == "1"){
-       $mail->SMTPSecure = 'ssl';
-    };
-    
-    
-    if($this->getValue('auth') == "1"){
-    $mail->SMTPAuth = true;
-    };
-    
-    $mail->IsHTML(true);
-    $mail->Username = $this->getValue('sender'); /* login do skrzynki email często adres*/
-    $mail->Password = $this->getValue('passwordsmtp') ; /* Hasło do poczty */
-    $mail->setFrom($this->getValue('sender'), $this->getValue('sendername')); /* adres e-mail i nazwa nadawcy */
-    
-    
-    $mail->Subject = $subject; /* Tytuł wiadomości */
-    $mail->Body = html_entity_decode($message);
-    
-    foreach($newlist as $email){
-    
-        if($email !== '' ){
-            $mail->addAddress("$email");
-            //$success = $mail->Send();
-    
-            if(!$mail->Send()){
-                $sended = false;
+        if (isset($_POST['messagenewsletter'])) {
+            file_put_contents($this->phpPath() . 'security/info', $_POST['messagenewsletter']);
+        };
+
+        parent::post();
+    }
+
+
+
+
+
+
+
+    public function adminController()
+    {
+        // Check if the form was sent
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+
+
+            $emailList = file_get_contents($this->phpPath() . 'security/emails');
+            $newlist = explode(",", $emailList);
+
+
+            if (isset($_POST['sendnewsletter'])) {
+
+                require($this->phpPath() . "PHPMailer/src/PHPMailer.php");
+                require($this->phpPath() . "PHPMailer/src/SMTP.php");
+                require($this->phpPath() . "PHPMailer/src/Exception.php");
+
+                $subject = $_POST['titlens'];
+                $message = $_POST['contentnewsletter'];
+
+                $mail = new PHPMailer\PHPMailer\PHPMailer();
+
+
+                if ($this->getValue('mailoption') == 'SMTP') {
+                    $mail->IsSMTP();
+                    $mail->CharSet = "UTF-8";
+                    $mail->Host = $this->getValue('smtpserver'); /* Zależne od hostingu poczty*/
+                    $mail->SMTPDebug = 0;
+                    $mail->Port = $this->getValue('port'); /* Zależne od hostingu poczty, czasem 587 */
+
+                    if ($this->getValue('ssl') == "1") {
+                        $mail->SMTPSecure = 'ssl';
+                    };
+
+
+                    if ($this->getValue('auth') == "1") {
+                        $mail->SMTPAuth = true;
+                    };
                 } else {
-              $sended = true; 
+                    $mail->IsMail();
                 }
-    
-            $mail->clearAllRecipients();
-        }
-    
-    };
-    
-    if($sended == true){
-        echo '<div class="alert alert-success" role="alert">
+
+
+                $mail->IsHTML(true);
+                $mail->Username = $this->getValue('sender'); /* login do skrzynki email często adres*/
+                $mail->Password = $this->getValue('passwordsmtp'); /* Hasło do poczty */
+                $mail->setFrom($this->getValue('sender'), $this->getValue('sendername')); /* adres e-mail i nazwa nadawcy */
+
+
+                $mail->Subject = $subject; /* Tytuł wiadomości */
+                $mail->Body = html_entity_decode($message);
+
+                foreach ($newlist as $email) {
+
+                    if ($email !== '') {
+                        $mail->addAddress("$email");
+                        //$success = $mail->Send();
+
+                        if (!$mail->Send()) {
+                            $sended = false;
+                        } else {
+                            $sended = true;
+                        }
+
+                        $mail->clearAllRecipients();
+                    }
+                };
+
+                if ($sended == true) {
+                    echo '<div class="alert alert-success" role="alert">
         Messages have been sent!</div>';
-    }else{
-        echo '<div class="alert alert-danger" role="alert">
-        Messages have not sent! <br>'.$mail->ErrorInfo.'</div>';
-    };
-
-    };
-
-
-
-
-
-            }
+                } else {
+                    echo '<div class="alert alert-danger" role="alert">
+        Messages have not sent! <br>' . $mail->ErrorInfo . '</div>';
+                };
+            };
         }
-    
-        public function adminView()
-        {
-            // Token for send forms in Bludit
-            global $security;
-            $tokenCSRF = $security->getTokenCSRF();
-    
-            
-            $html = '
+    }
+
+    public function adminView()
+    {
+        // Token for send forms in Bludit
+        global $security;
+        $tokenCSRF = $security->getTokenCSRF();
+
+
+        $html = '
 
 
 <link rel="stylesheet" type="text/css" href="/bl-plugins/tinymce/css/tinymce_toolbar.css">
 <script src="/bl-plugins/tinymce/tinymce/tinymce.min.js?version=5.10.5"></script>
 
                 <form method="post">
-                <input type="hidden" id="jstokenCSRF" name="tokenCSRF" value="'.$tokenCSRF.'">
+                <input type="hidden" id="jstokenCSRF" name="tokenCSRF" value="' . $tokenCSRF . '">
                 <h3>Send New Newsletter</h3>
 			
                 <label>Newsletter Title:</label>
@@ -193,27 +197,25 @@ if(isset($_POST['sendnewsletter'])){
         </script>
         
             ';
-            return $html;
-        }
-    
-        public function adminSidebar()
-        {
-            $pluginName = Text::lowercase(__CLASS__);
-            $url = HTML_PATH_ADMIN_ROOT.'plugin/'.$pluginName;
-            $html = '<a id="current-version" class="nav-link" href="'.$url.'"> <i class="fa fa-envelope"></i>Send newsletter</a>';
-            return $html;
-        }
-
-
-
-
-
-
-        public function newsletter(){
-
-include($this->phpPath().'php/frontForm.php');
-
-        }
-
+        return $html;
     }
-?>
+
+    public function adminSidebar()
+    {
+        $pluginName = Text::lowercase(__CLASS__);
+        $url = HTML_PATH_ADMIN_ROOT . 'plugin/' . $pluginName;
+        $html = '<a id="current-version" class="nav-link" href="' . $url . '"> <i class="fa fa-envelope"></i>Send newsletter</a>';
+        return $html;
+    }
+
+
+
+
+
+
+    public function newsletter()
+    {
+
+        include($this->phpPath() . 'php/frontForm.php');
+    }
+}
